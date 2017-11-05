@@ -8,11 +8,13 @@
 module OM.Elm (
   requireElm,
   elmSite,
+  elmSiteDebug
 ) where
 
 
 import Control.Exception.Safe (tryAny)
 import Control.Monad (void)
+import Data.Bool (bool)
 import Data.Map (Map)
 import Data.Monoid ((<>))
 import Data.String (IsString, fromString)
@@ -73,7 +75,13 @@ requireElm hooks =
   downstream 'Application'.
 -}
 elmSite :: Map [Text] FilePath -> Q (TExp Middleware)
-elmSite spec =
+elmSite = elmSite2 False
+
+elmSiteDebug :: Map [Text] FilePath -> Q (TExp Middleware)
+elmSiteDebug = elmSite2 True
+
+elmSite2 :: Bool -> Map [Text] FilePath -> Q (TExp Middleware)
+elmSite2 debug spec =
     buildMiddleware =<< (
       mapM (\(u, c) -> (u,) <$> c) [
         (uriPath, compileElm uriPath elmFile)
@@ -113,11 +121,11 @@ elmSite spec =
           void . tryAny $ removeDirectoryRecursive buildDir
           createDirectory buildDir
           putStrLn $ "Compiling elm file: " ++ elmFile
-          forkProcess (executeFile "elm-make" True [
+          forkProcess (executeFile "elm-make" True ([
               elmFile,
               "--yes",
               "--output=" <> buildFile
-            ] Nothing) >>= getProcessStatus True True >>= \case
+            ] ++ bool [] ["--debug"] debug) Nothing) >>= getProcessStatus True True >>= \case
               Nothing -> fail "elm-make should have ended."
               Just (Exited ExitSuccess) ->
                 (contentType,)
