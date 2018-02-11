@@ -3,5 +3,4 @@ extra-package-dbs: []
 packages:
 - .
 extra-deps:
-- scotty-resource-0.2.0.0
-resolver: lts-9.6
+resolver: lts-10.3

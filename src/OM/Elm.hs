@@ -23,7 +23,7 @@ import Data.Text.Encoding (decodeUtf8)
 import Distribution.Simple (hookedPrograms, simpleUserHooks, preConf,
    UserHooks)
 import Distribution.Simple.Program (simpleProgram, Program,
-   configureAllKnownPrograms, defaultProgramConfiguration, requireProgram)
+   configureAllKnownPrograms, requireProgram, defaultProgramDb)
 import Distribution.Simple.Setup (fromFlagOrDefault, configVerbosity)
 import Distribution.Verbosity (normal)
 import Language.Haskell.TH (Q, TExp, runIO)
@@ -54,7 +54,7 @@ requireElm hooks =
 
       preConf = \args flags -> do
         let verbosity = fromFlagOrDefault normal (configVerbosity flags)
-        db <- configureAllKnownPrograms verbosity defaultProgramConfiguration
+        db <- configureAllKnownPrograms verbosity defaultProgramDb
         _ <- requireProgram verbosity elmProg db
         preConf simpleUserHooks args flags
     }
