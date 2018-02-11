@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                om-elm
-version:             0.1.1.0
+version:             0.1.1.1
 synopsis:            Haskell utilities for building embedded Elm programs.
 -- description:         
 license:             AllRightsReserved
