@@ -14,9 +14,16 @@
 
   Usage is designed to be as simple as possible. There are 3 steps:
 
-  1) Change your .cabal file to use a \"Custom\" build type
+  1) Change your .cabal file to use a \"Custom\" build type, and add
+  the appropriate custom build dependencies.
 
   > build-type: Custom
+  > ...
+  > custom-setup
+  >   setup-depends:
+  >     Cabal,
+  >     base,
+  >     om-elm
 
   2) Modify your @Setup.hs@ file, using 'requireElm'.
 
