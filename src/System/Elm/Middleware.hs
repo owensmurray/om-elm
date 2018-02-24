@@ -4,11 +4,33 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ViewPatterns #-}
 
-{- | Cabal build setup stuff. -}
-module OM.Elm (
+{- |
+  This module contains utilities for compiling and bundling Elm programs
+  directly into your Haskell executable binary. It is useful for the
+  case where you want to bundle a front-end Elm web app along with the
+  backing services that support it, and especially for when the two
+  components are part of the same codebase. It produces WAI Middleware,
+  and is thus compatible with a wide range server-side frameworks.
+
+  Usage is designed to be as simple as possible. There are 3 steps:
+
+  1) Change your .cabal file to use a \"Custom\" build type
+
+  > build-type: Custom
+
+  2) Modify your @Setup.hs@ file, using 'requireElm'.
+
+  3) Include a 'Middleware' template-haskell splice, using 'elmSite',
+  in the appropriate place in your code.
+
+  See the function documnetation for more details.
+
+-}
+module System.Elm.Middleware (
   requireElm,
   elmSite,
-  elmSiteDebug
+  elmSiteDebug,
+  PathInfo,
 ) where
 
 
@@ -45,7 +67,11 @@ import qualified Data.Text as T
   Add the elm-make program requirements to a set of build hooks. This is
   expected to be used in your Setup.hs file thusly:
 
-  > main = defaultMainWithHooks (requireElmMake simpleBuildHooks)
+  > import Distribution.Simple (defaultMainWithHooks, simpleUserHooks)
+  > import System.Elm.Middleware (requireElm)
+  > 
+  > main = defaultMainWithHooks (requireElm simpleUserHooks)
+
 -}
 requireElm :: UserHooks -> UserHooks
 requireElm hooks =
@@ -73,14 +99,27 @@ requireElm hooks =
   elm program located at the file is served whenever the pathInfo matches
   that of the request. Any non-matching request is forwarded to the
   downstream 'Application'.
+
+  The typed template-haskell splice:
+
+  > $$(elmSite $ Map.fromList [
+  >     (["app.js"], "elm/Your/Elm/Module/App.elm")
+  >   ])
+
+  will construct a WAI 'Middleware' which serves the compiled elm program on
+  @/app.js@.
+
 -}
-elmSite :: Map [Text] FilePath -> Q (TExp Middleware)
+elmSite :: Map PathInfo FilePath -> Q (TExp Middleware)
 elmSite = elmSite2 False
 
-elmSiteDebug :: Map [Text] FilePath -> Q (TExp Middleware)
+
+{- | Like 'elmSite', but serve the debug elm runtime. -}
+elmSiteDebug :: Map PathInfo FilePath -> Q (TExp Middleware)
 elmSiteDebug = elmSite2 True
 
-elmSite2 :: Bool -> Map [Text] FilePath -> Q (TExp Middleware)
+
+elmSite2 :: Bool -> Map PathInfo FilePath -> Q (TExp Middleware)
 elmSite2 debug spec =
     buildMiddleware =<< (
       mapM (\(u, c) -> (u,) <$> c) [
@@ -145,16 +184,20 @@ elmSite2 debug spec =
         {- | Figure out if we are compiling to javascript or html. -}
         contentType :: String
         contentType = case lastMay uriPath of
-            Just (endsWith ".js" -> True) -> "text/javascript"
-            _ -> "text/html"
+          Just (endsWith ".js" -> True) -> "text/javascript"
+          _ -> "text/html"
 
         buildFile :: FilePath
         buildFile = buildDir <> case lastMay uriPath of
-            Just (endsWith ".js" -> True) -> "/elm.js"
-            _ -> "/elm.html"
+          Just (endsWith ".js" -> True) -> "/elm.js"
+          _ -> "/elm.html"
 
         endsWith :: String -> String -> Bool
         endsWith ending str =
           take (length ending) (reverse str) == reverse ending
+
+
+{- | A WAI uri path, as per the meaning of 'pathInfo'. -}
+type PathInfo = [Text]
 
 
