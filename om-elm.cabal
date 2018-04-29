@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                om-elm
-version:             1.0.0.2
+version:             1.0.0.3
 synopsis:            Haskell utilities for building embedded Elm programs.
 description:         This package provides utilities for serving Elm programs
                      directly from your Haskell binary. It uses TemplateHaskell
