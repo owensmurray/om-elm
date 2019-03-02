@@ -128,12 +128,11 @@ elmSiteDebug = elmSite2 True
 
 elmSite2 :: Bool -> Map PathInfo FilePath -> Q (TExp Middleware)
 elmSite2 debug spec =
-    buildMiddleware =<< (
+    buildMiddleware =<<
       mapM (\(u, c) -> (u,) <$> c) [
         (uriPath, compileElm uriPath elmFile)
         | (fmap T.unpack -> uriPath, elmFile) <- Map.toList spec
       ]
-    )
   where
     {- | Construct the middleware from a set of compiled elm resources. -}
     buildMiddleware :: [([String], (String, String))] -> Q (TExp Middleware)
