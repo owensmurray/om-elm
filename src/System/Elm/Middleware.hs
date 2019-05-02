@@ -48,7 +48,6 @@ import Data.Map (Map)
 import Data.Monoid ((<>))
 import Data.String (IsString, fromString)
 import Data.Text (Text)
-import Data.Text.Encoding (decodeUtf8)
 import Distribution.Simple (hookedPrograms, simpleUserHooks, preConf,
    UserHooks)
 import Distribution.Simple.Program (simpleProgram, Program,
@@ -68,10 +67,11 @@ import System.Posix (ProcessStatus(Exited), forkProcess, executeFile,
 import qualified Data.ByteString as BS
 import qualified Data.Map as Map
 import qualified Data.Text as T
+import qualified Data.ByteString.Char8 as BS8
 
 
 {- |
-  Add the elm-make program requirements to a set of build hooks. This is
+  Add the elm program requirements to a set of build hooks. This is
   expected to be used in your Setup.hs file thusly:
 
   > import Distribution.Simple (defaultMainWithHooks, simpleUserHooks)
@@ -92,9 +92,9 @@ requireElm hooks =
         preConf simpleUserHooks args flags
     }
   where
-    {- | A description of the elm-make program.  -}
+    {- | A description of the elm program.  -}
     elmProg :: Program
-    elmProg = simpleProgram "elm-make"
+    elmProg = simpleProgram "elm"
 
 
 {- |
@@ -166,22 +166,21 @@ elmSite2 debug spec =
           void . tryAny $ removeDirectoryRecursive buildDir
           createDirectory buildDir
           putStrLn $ "Compiling elm file: " ++ elmFile
-          forkProcess (executeFile "elm-make" True ([
+          forkProcess (executeFile "elm" True ([
+              "make",
               elmFile,
-              "--yes",
               "--output=" <> buildFile
             ] ++ bool [] ["--debug"] debug) Nothing) >>= getProcessStatus True True >>= \case
-              Nothing -> fail "elm-make should have ended."
+              Nothing -> fail "elm should have ended."
               Just (Exited ExitSuccess) ->
                 (contentType,)
-                . T.unpack
-                . decodeUtf8
+                . BS8.unpack
                 <$> BS.readFile buildFile
-              e -> fail $ "elm-make failed with: " ++ show e
+              e -> fail $ "elm failed with: " ++ show e
       where
         {- |
           The name of the build directory. We have to have a build
-          directory because elm-make won't output compile results to
+          directory because elm won't output compile results to
           stdout. It will only output them to files.
         -}
         buildDir :: (IsString a) => a
