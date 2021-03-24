@@ -48,26 +48,26 @@ import Data.Map (Map)
 import Data.Monoid ((<>))
 import Data.String (IsString, fromString)
 import Data.Text (Text)
-import Distribution.Simple (hookedPrograms, simpleUserHooks, preConf,
-   UserHooks)
-import Distribution.Simple.Program (simpleProgram, Program,
-   configureAllKnownPrograms, requireProgram, defaultProgramDb)
-import Distribution.Simple.Setup (fromFlagOrDefault, configVerbosity)
+import Distribution.Simple (UserHooks, hookedPrograms, preConf,
+  simpleUserHooks)
+import Distribution.Simple.Program (Program, configureAllKnownPrograms,
+  defaultProgramDb, requireProgram, simpleProgram)
+import Distribution.Simple.Setup (configVerbosity, fromFlagOrDefault)
 import Distribution.Verbosity (normal)
 import Language.Haskell.TH (Q, TExp, runIO)
 import Language.Haskell.TH.Syntax (addDependentFile)
-import Network.HTTP.Types (ok200, methodNotAllowed405)
-import Network.Wai (Middleware, Application, pathInfo, requestMethod,
-   responseLBS)
+import Network.HTTP.Types (methodNotAllowed405, ok200)
+import Network.Wai (Application, Middleware, pathInfo, requestMethod,
+  responseLBS)
 import Safe (lastMay)
-import System.Directory (removeDirectoryRecursive, createDirectory)
+import System.Directory (createDirectory, removeDirectoryRecursive)
 import System.Exit (ExitCode(ExitSuccess))
-import System.Posix (ProcessStatus(Exited), forkProcess, executeFile,
-   getProcessStatus)
+import System.Posix (ProcessStatus(Exited), executeFile, forkProcess,
+  getProcessStatus)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BS8
 import qualified Data.Map as Map
 import qualified Data.Text as T
-import qualified Data.ByteString.Char8 as BS8
 
 
 {- |
