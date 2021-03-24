@@ -3,4 +3,4 @@ extra-package-dbs: []
 packages:
 - .
 extra-deps:
-resolver: lts-13.8
+resolver: lts-16.26

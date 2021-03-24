@@ -45,7 +45,6 @@ import Control.Exception.Safe (tryAny)
 import Control.Monad (void)
 import Data.Bool (bool)
 import Data.Map (Map)
-import Data.Monoid ((<>))
 import Data.String (IsString, fromString)
 import Data.Text (Text)
 import Distribution.Simple (UserHooks, hookedPrograms, preConf,
