@@ -53,7 +53,7 @@ import Distribution.Simple.Program (Program, configureAllKnownPrograms,
   defaultProgramDb, requireProgram, simpleProgram)
 import Distribution.Simple.Setup (configVerbosity, fromFlagOrDefault)
 import Distribution.Verbosity (normal)
-import Language.Haskell.TH (Q, TExp, runIO)
+import Language.Haskell.TH (Code(examineCode), Q, TExp, runIO)
 import Language.Haskell.TH.Syntax (addDependentFile)
 import Network.HTTP.Types (methodNotAllowed405, ok200)
 import Network.Wai (Application, Middleware, pathInfo, requestMethod,
@@ -135,7 +135,7 @@ elmSite2 debug spec =
   where
     {- | Construct the middleware from a set of compiled elm resources. -}
     buildMiddleware :: [([String], (String, String))] -> Q (TExp Middleware)
-    buildMiddleware resources = [||
+    buildMiddleware resources = examineCode [||
         let
           apps = Map.fromList[
               (uriPath, buildApp contentType content)
