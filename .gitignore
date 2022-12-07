@@ -1,1 +1,5 @@
 /.stack-work
+/dist-newstyle
+/.tags.log
+/tags
+/cabal.project.local
