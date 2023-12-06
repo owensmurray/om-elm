@@ -1,0 +1,5 @@
+packages:
+  "."
+package vennmeet
+  ghc-options:
+    -Werror
