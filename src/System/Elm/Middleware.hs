@@ -135,28 +135,30 @@ elmSite2 debug spec =
   where
     {- | Construct the middleware from a set of compiled elm resources. -}
     buildMiddleware :: [([String], (String, String))] -> Q (TExp Middleware)
-    buildMiddleware resources = examineCode [||
-        let
-          apps = Map.fromList[
-              (uriPath, buildApp contentType content)
-              | (fmap T.pack -> uriPath, (contentType, content)) <- resources
-            ]
-          {- | Build the application that serves a single elm resource. -}
-          buildApp :: String -> String -> Application
-          buildApp contentType content req respond = respond $
-            case requestMethod req of
-              "GET" ->
-                responseLBS
-                  ok200
-                  [("Content-Type", fromString contentType)]
-                  (fromString content)
-              _ -> responseLBS methodNotAllowed405 [("Allow", "GET")] ""
-        in
-          \downstream req respond ->
-            case Map.lookup (pathInfo req) apps of
-              Nothing -> downstream req respond
-              Just app -> app req respond
-      ||]
+    buildMiddleware resources =
+      examineCode
+        [||
+          let
+            apps = Map.fromList[
+                (uriPath, buildApp contentType content)
+                | (fmap T.pack -> uriPath, (contentType, content)) <- resources
+              ]
+            {- | Build the application that serves a single elm resource. -}
+            buildApp :: String -> String -> Application
+            buildApp contentType content req respond = respond $
+              case requestMethod req of
+                "GET" ->
+                  responseLBS
+                    ok200
+                    [("Content-Type", fromString contentType)]
+                    (fromString content)
+                _ -> responseLBS methodNotAllowed405 [("Allow", "GET")] ""
+          in
+            \downstream req respond ->
+              case Map.lookup (pathInfo req) apps of
+                Nothing -> downstream req respond
+                Just app -> app req respond
+        ||]
 
     compileElm :: [String] -> FilePath -> Q (String, String)
     compileElm uriPath elmFile = do
@@ -165,17 +167,20 @@ elmSite2 debug spec =
           void . tryAny $ removeDirectoryRecursive buildDir
           createDirectory buildDir
           putStrLn $ "Compiling elm file: " ++ elmFile
-          forkProcess (executeFile "elm" True ([
-              "make",
-              elmFile,
-              "--output=" <> buildFile
-            ] ++ bool [] ["--debug"] debug) Nothing) >>= getProcessStatus True True >>= \case
-              Nothing -> fail "elm should have ended."
-              Just (Exited ExitSuccess) ->
-                (contentType,)
-                . BS8.unpack
-                <$> BS.readFile buildFile
-              e -> fail $ "elm failed with: " ++ show e
+          forkProcess
+            (
+              executeFile "elm" True ([
+                  "make",
+                  elmFile,
+                  "--output=" <> buildFile
+                ] ++ bool [] ["--debug"] debug) Nothing
+            ) >>= getProcessStatus True True >>= \case
+                Nothing -> fail "elm should have ended."
+                Just (Exited ExitSuccess) ->
+                  (contentType,)
+                  . BS8.unpack
+                  <$> BS.readFile buildFile
+                e -> fail $ "elm failed with: " ++ show e
       where
         {- |
           The name of the build directory. We have to have a build
