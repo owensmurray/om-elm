@@ -1,6 +1,6 @@
 cabal-version:       3.0
 name:                om-elm
-version:             2.0.0.6
+version:             2.0.0.7
 synopsis:            Haskell utilities for building embedded Elm programs.
 description:         This package provides utilities for serving Elm programs
                      directly from your Haskell binary. It uses TemplateHaskell
