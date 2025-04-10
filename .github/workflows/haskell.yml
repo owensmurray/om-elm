@@ -13,7 +13,8 @@ jobs:
           - '9.6'
           - '9.8'
           - '9.10'
-        cabal-version: ['3.12.1.0']
+          - '9.12'
+        cabal-version: ['3.14.1.1']
     steps:
       # Checkout
       - uses: actions/checkout@v3
