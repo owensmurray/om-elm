@@ -33,36 +33,48 @@
   See the function documnetation for more details.
 
 -}
-module System.Elm.Middleware (
-  requireElm,
-  elmSite,
-  elmSiteDebug,
-  PathInfo,
-) where
+module System.Elm.Middleware
+  ( requireElm
+  , elmSite
+  , elmSiteDebug
+  , PathInfo
+  )
+where
 
 
 import Control.Exception.Safe (tryAny)
 import Control.Monad (void)
 import Data.Bool (bool)
 import Data.Map (Map)
-import Data.String (IsString, fromString)
+import Data.String (IsString(fromString))
 import Data.Text (Text)
-import Distribution.Simple (UserHooks, hookedPrograms, preConf,
-  simpleUserHooks)
-import Distribution.Simple.Program (Program, configureAllKnownPrograms,
-  defaultProgramDb, requireProgram, simpleProgram)
-import Distribution.Simple.Setup (configVerbosity, fromFlagOrDefault)
+import Distribution.Simple (UserHooks(hookedPrograms, preConf), simpleUserHooks)
+import Distribution.Simple.Program
+  ( Program, configureAllKnownPrograms, defaultProgramDb, requireProgram
+  , simpleProgram
+  )
+import Distribution.Simple.Setup
+  ( ConfigFlags(configVerbosity), fromFlagOrDefault
+  )
 import Distribution.Verbosity (normal)
 import Language.Haskell.TH (Code(examineCode), Q, TExp, runIO)
 import Language.Haskell.TH.Syntax (addDependentFile)
 import Network.HTTP.Types (methodNotAllowed405, ok200)
-import Network.Wai (Application, Middleware, pathInfo, requestMethod,
-  responseLBS)
+import Network.Wai
+  ( Request(pathInfo, requestMethod), Application, Middleware, responseLBS
+  )
+import Prelude
+  ( Bool(False, True), Eq((==)), Foldable(length), Functor(fmap)
+  , Maybe(Just, Nothing), Monad((>>=)), MonadFail(fail), Semigroup((<>))
+  , Show(show), Traversable(mapM), ($), (++), (.), (<$>), (=<<), FilePath
+  , String, putStrLn, reverse, take
+  )
 import Safe (lastMay)
 import System.Directory (createDirectory, removeDirectoryRecursive)
 import System.Exit (ExitCode(ExitSuccess))
-import System.Posix (ProcessStatus(Exited), executeFile, forkProcess,
-  getProcessStatus)
+import System.Posix
+  ( ProcessStatus(Exited), executeFile, forkProcess, getProcessStatus
+  )
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.Map as Map
@@ -75,7 +87,7 @@ import qualified Data.Text as T
 
   > import Distribution.Simple (defaultMainWithHooks, simpleUserHooks)
   > import System.Elm.Middleware (requireElm)
-  > 
+  >
   > main = defaultMainWithHooks (requireElm simpleUserHooks)
 
 -}
