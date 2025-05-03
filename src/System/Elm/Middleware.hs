@@ -37,6 +37,8 @@ module System.Elm.Middleware
   ( requireElm
   , elmSite
   , elmSiteDebug
+  , elmSiteDev
+  , elmSiteOptimize
   , PathInfo
   )
 where
@@ -44,7 +46,6 @@ where
 
 import Control.Exception.Safe (tryAny)
 import Control.Monad (void)
-import Data.Bool (bool)
 import Data.Map (Map)
 import Data.String (IsString(fromString))
 import Data.Text (Text)
@@ -64,10 +65,10 @@ import Network.Wai
   ( Request(pathInfo, requestMethod), Application, Middleware, responseLBS
   )
 import Prelude
-  ( Bool(False, True), Eq((==)), Foldable(length), Functor(fmap)
-  , Maybe(Just, Nothing), Monad((>>=)), MonadFail(fail), Semigroup((<>))
-  , Show(show), Traversable(mapM), ($), (++), (.), (<$>), (=<<), FilePath
-  , String, putStrLn, reverse, take
+  ( Bool(True), Eq((==)), Foldable(length), Functor(fmap), Maybe(Just, Nothing)
+  , Monad((>>=)), MonadFail(fail), Semigroup((<>)), Show(show)
+  , Traversable(mapM), ($), (++), (.), (<$>), (=<<), FilePath, String, putStrLn
+  , reverse, take
   )
 import Safe (lastMay)
 import System.Directory (createDirectory, removeDirectoryRecursive)
@@ -127,18 +128,32 @@ requireElm hooks =
   will construct a WAI 'Middleware' which serves the compiled elm program on
   @/app.js@.
 
+  Neither the @--optimize@ nor the @--debug@ flags are passed to the
+  elm compiler.
+
 -}
+elmSiteDev  :: Map PathInfo FilePath -> Q (TExp Middleware)
+elmSiteDev = elmSite2 Dev
+
+
+{-| Deprecated. Synonym for 'elmSiteDev'.  -}
+{-# DEPRECATED elmSite "Use elmSiteDev instead. This function will be removed in a future release." #-}
 elmSite :: Map PathInfo FilePath -> Q (TExp Middleware)
-elmSite = elmSite2 False
+elmSite = elmSite2 Dev
 
 
-{- | Like 'elmSite', but serve the debug elm runtime. -}
+{- | Like 'elmSiteDev', but serve the debug elm runtime. -}
 elmSiteDebug :: Map PathInfo FilePath -> Q (TExp Middleware)
-elmSiteDebug = elmSite2 True
+elmSiteDebug = elmSite2 Debug
 
 
-elmSite2 :: Bool -> Map PathInfo FilePath -> Q (TExp Middleware)
-elmSite2 debug spec =
+{- | Like 'elmSiteDev', but pass @--optimize@ to the elm compiler. -}
+elmSiteOptimize :: Map PathInfo FilePath -> Q (TExp Middleware)
+elmSiteOptimize = elmSite2 Optimize
+
+
+elmSite2 :: Mode -> Map PathInfo FilePath -> Q (TExp Middleware)
+elmSite2 mode spec =
     buildMiddleware =<<
       mapM (\(u, c) -> (u,) <$> c) [
         (uriPath, compileElm uriPath elmFile)
@@ -179,13 +194,20 @@ elmSite2 debug spec =
           void . tryAny $ removeDirectoryRecursive buildDir
           createDirectory buildDir
           putStrLn $ "Compiling elm file: " ++ elmFile
+          let
+            flags :: [String]
+            flags =
+              case mode of
+                Debug -> ["--debug"]
+                Dev -> []
+                Optimize -> ["--optimize"]
           forkProcess
             (
               executeFile "elm" True ([
                   "make",
                   elmFile,
                   "--output=" <> buildFile
-                ] ++ bool [] ["--debug"] debug) Nothing
+                ] ++ flags) Nothing
             ) >>= getProcessStatus True True >>= \case
                 Nothing -> fail "elm should have ended."
                 Just (Exited ExitSuccess) ->
@@ -220,5 +242,11 @@ elmSite2 debug spec =
 
 {- | A WAI uri path, as per the meaning of 'pathInfo'. -}
 type PathInfo = [Text]
+
+
+data Mode
+  = Optimize
+  | Dev
+  | Debug
 
 
