@@ -1,6 +1,8 @@
 active-repositories: hackage.haskell.org:merge, owens-murray:merge
-constraints: any.Cabal ==3.14.1.0,
-             any.Cabal-syntax ==3.14.1.0,
+constraints: any.Cabal ==3.16.0.0,
+             Cabal -git-rev,
+             any.Cabal-syntax ==3.16.0.0,
+             any.alex ==3.5.4.0,
              any.array ==0.5.8.0,
              any.base ==4.21.0.0,
              any.binary ==0.8.9.3,
@@ -42,4 +44,4 @@ constraints: any.Cabal ==3.14.1.0,
              any.vault ==0.3.1.5,
              vault +useghc,
              any.wai ==3.2.4
-index-state: hackage.haskell.org 2025-04-08T21:24:21Z
+index-state: hackage.haskell.org 2025-08-11T00:12:52Z
