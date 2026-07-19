@@ -32,7 +32,8 @@ common warnings
 
 library
   import: warnings
-  exposed-modules:     
+  exposed-modules:
+    System.Elm.Compile
     System.Elm.Middleware
   -- other-modules:       
   -- other-extensions:    

@@ -1,4 +1,4 @@
-active-repositories: hackage.haskell.org:merge
+active-repositories: hackage.haskell.org:merge, owensmurray:merge
 constraints: any.Cabal ==3.16.0.0,
              any.Cabal-syntax ==3.16.0.0,
              any.array ==0.5.8.0,
@@ -19,7 +19,7 @@ constraints: any.Cabal ==3.16.0.0,
              hashable -arch-native -random-initial-seed,
              any.hsc2hs ==0.68.10,
              hsc2hs -in-ghc-tree,
-             any.http-types ==0.12.4,
+             any.http-types ==0.12.5,
              any.mtl ==2.3.1,
              any.network ==3.2.8.0,
              network -devel,
@@ -38,7 +38,7 @@ constraints: any.Cabal ==3.16.0.0,
              any.unix ==2.8.8.0,
              any.unordered-containers ==0.2.21,
              unordered-containers -debug,
-             any.vault ==0.3.1.6,
+             any.vault ==0.3.2.0,
              vault +useghc,
              any.wai ==3.2.4
-index-state: hackage.haskell.org 2026-02-01T04:15:37Z
+index-state: hackage.haskell.org 2026-07-19T17:55:13Z
