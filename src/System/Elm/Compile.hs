@@ -121,19 +121,19 @@ module System.Elm.Compile (
 )
 where
 
-import Control.Exception.Safe (tryAny)
+import Control.Exception.Safe (bracket, tryAny)
 import Control.Monad (Monad((>>=)), void)
-import Data.String (IsString)
 import Language.Haskell.TH (Q, runIO)
 import Language.Haskell.TH.Syntax (addDependentFile)
 import Prelude
   ( Bool(True), Functor(fmap), Maybe(Just, Nothing), MonadFail(fail)
   , Semigroup((<>)), Show(show), ($), (++), (.), Eq, FilePath, String, putStrLn
   )
-import System.Directory (createDirectory, removeDirectoryRecursive)
+import System.Directory (removeDirectoryRecursive)
 import System.Exit (ExitCode(ExitSuccess))
 import System.Posix
   ( ProcessStatus(Exited), executeFile, forkProcess, getProcessStatus
+  , mkdtemp
   )
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BS8
@@ -151,17 +151,19 @@ data ElmOutputFormat
   deriving stock (Eq, Show)
 
 
-buildDir :: (IsString a) => a
-buildDir = ".om-elm-build-dir"
+buildDirPrefix :: FilePath
+buildDirPrefix = ".om-elm-build-dir-"
 
 
 {- |
   Compile an Elm program at Template Haskell time.
 
   This function invokes @elm make@, reads the compiler output from a
-  temporary build directory, and returns the contents as a 'String'.
-  The caller is responsible for interpreting the result — for example,
-  choosing an HTTP content type or converting to 'Text'.
+  unique temporary build directory, and returns the contents as a
+  'String'. The temporary directory is deleted after compilation
+  finishes, including when compilation fails. The caller is responsible
+  for interpreting the result — for example, choosing an HTTP content
+  type or converting to 'Text'.
 
   == Parameters
 
@@ -234,32 +236,38 @@ compileElm
   -> Q String
 compileElm mode format elmFile = do
   addDependentFile elmFile
-  runIO $ do
-    void . tryAny $ removeDirectoryRecursive buildDir
-    createDirectory buildDir
-    putStrLn $ "Compiling elm file: " ++ elmFile
-    let
-      flags :: [String]
-      flags =
-        case mode of
-          Debug -> ["--debug"]
-          Dev -> []
-          Optimize -> ["--optimize"]
-    forkProcess
-      (
-        executeFile "elm" True ([
-            "make",
-            elmFile,
-            "--output=" <> buildFile format
-          ] ++ flags) Nothing
-      ) >>= getProcessStatus True True >>= \case
-          Nothing -> fail "elm should have ended."
-          Just (Exited ExitSuccess) ->
-            fmap BS8.unpack (BS.readFile (buildFile format))
-          e -> fail $ "elm failed with: " ++ show e
+  runIO $
+    bracket
+      (mkdtemp buildDirPrefix)
+      (\dir -> void . tryAny $ removeDirectoryRecursive dir)
+      (\dir -> do
+        putStrLn $ "Compiling elm file: " ++ elmFile
+        let
+          flags :: [String]
+          flags =
+            case mode of
+              Debug -> ["--debug"]
+              Dev -> []
+              Optimize -> ["--optimize"]
+
+          outputFile :: FilePath
+          outputFile = buildFile dir format
+        forkProcess
+          (
+            executeFile "elm" True ([
+                "make",
+                elmFile,
+                "--output=" <> outputFile
+              ] ++ flags) Nothing
+          ) >>= getProcessStatus True True >>= \case
+              Nothing -> fail "elm should have ended."
+              Just (Exited ExitSuccess) ->
+                fmap BS8.unpack (BS.readFile outputFile)
+              e -> fail $ "elm failed with: " ++ show e
+      )
 
 
-buildFile :: ElmOutputFormat -> FilePath
-buildFile = \case
-  JavaScript -> buildDir <> "/elm.js"
-  Html -> buildDir <> "/elm.html"
+buildFile :: FilePath -> ElmOutputFormat -> FilePath
+buildFile dir = \case
+  JavaScript -> dir <> "/elm.js"
+  Html -> dir <> "/elm.html"
